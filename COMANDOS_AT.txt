@@ -1,0 +1,166 @@
+AT+CLAC			lISTA TODOS OS COMANDOS DISPONIVEIS
+				T.: 5511996439126
+				APN1: smart.m2m.vivo.com.br
+				APN2: kiteiot.vivo.com.br
+				
+AT+CMEE=2
+ate1v1
+AT+CGMR
+at+CCID				ICC  (89551082257003918847)
+AT+GSN				IMEI (860016049866614)
+
+AT+CNMP=2			2 Automatic 13 GSM only 38 LTE only 51 GSM and LTE only
+AT+CMNB=3			1 CAT-M 2 NB-Iot 3 CAT-M and NB-IoT 
+
+AT+CFUN=0
+AT+CGDCONT=1,"IP", "kiteiot.vivo.com.br"
+AT+CFUN=1
+
+AT+COPS=4,2,"724010"
+
+AT+CPIN?
+AT+CSQ
+
+AT+CBANDCFG="NB-IoT",12
+
+AT+CNCFG=0,1,"kiteiot.vivo.com.br"
+
+AT+CNBS=1
+
+
+AT+CNACT=0,1
+at+cnact?
+
+AT+SNPING4="8.8.8.8",1,16,5000
+
+at+cntp;AT+CCLK?
+
+AT+CCLK="25/05/10,16:30:40-03"
+
+
+AT+CFSINIT
+AT+CFSWFILE=3,"httpbin_root_ca.cer",0,1492,1000
+AT+CFSWFILE=3,"waveshare.cloud.cer",0,2190,5000
+AT+CFSWFILE=3,"waveshare_root_ca.cer",0,2048,5000
+AT+CFSTERM
+AT+CSSLCFG="convert",2,"waveshare.cloud.cer"
+
+
+AT+CSSLCFG="sslversion",1,3
+AT+SHSSL=1,"waveshare.cloud.cer"
+
+AT+CSSLCFG="sni",1,"waveshare.cloud"
+AT+CSSLCFG="CTXINDEX",1
+
+AT+SHSSL=1,""
+
+AT+SHCONF="URL",'https://www.waveshare.cloud/api/sample-test/'
+AT+SHCONF="URL",'https://yyyeng.sharepoint.com/sites/Teste/Documentos%20Compartilhados'    'nbiot001@yyyeng.com.br:S@262892069271ug'
+AT+SHCONF="URL",'https://ip-api.com/'
+
+AT+SHCONF="BODYLEN",1024
+AT+SHCONF="HEADERLEN",350
+AT+SHCONF="pollcnt",100
+AT+SHCONF="pollintms",5000
+AT+SHCONN
+AT+SHSTATE?
+
+
+AT+SHCONF="URL","http://www.httpbin.org"
+AT+SHCONF?
+AT+SHCONN
+AT+SHREQ="http://www.httpbin.org/get",1
+AT+SHREAD=0,391
+AT+SHDISC
+
+AT+SHCHEAD
+AT+SHAHEAD="Accept","text/html, */*"
+AT+SHAHEAD="User-Agent","IOE Client"
+AT+SHAHEAD="Connection","keep-alive"
+AT+SHAHEAD="Cache-control","no-cache"
+AT+SHPARA="parm1","data1"
+AT+SHREQ="http://www.httpbin.org/put",2
+AT+SHDISC
+
+AT+CSSLCFG="CIPHERSUITE",1,0,0x00A8
+
+AT+CPSMS=0
+
+AT+CGACT=1,1
+
+AT+CGPADDR=1
+
+At+CREG=1
+
+AT+SHCONN
+
+AT+GCAP
+AT+CBC		Bateria
+AT+CPSI?	Inquiring UE System Information
+
+###MQTT ====  Teste ok
+
+AT+SMCONF="URL","crystalmq.bevywise.com",1883
+AT+SMCONF="KEEPTIME",90
+AT+SMCONF="CLEANSS",1
+AT+SMCONF="CLIENTID","Shared Key"		#Falha acho que é devido a espaço no id
+AT+SMCONF="USERNAME","EeObn5ov3le0KYr6j0"
+AT+SMCONF="PASSWORD","91RaiiyWdh5uODjNm4"
+AT+SMCONN
+
+AT+SMCONF="CLEANSS",1
+AT+SMCONF="CLIENTID","teste1"
+AT+SMCONF="USERNAME","EeObn5ov3lmm7b1zZo"
+AT+SMCONF="PASSWORD","QJeEn6EawcJ8gSoQCF"
+AT+SMSTATE?
+
+AT+SMPUB="my_topic",5,1,1
+>12.34 
+
+
+-------------------
+AT+CMNB=3
+
+OK
+AT+COPS=4,2,"724010"
+
+OK
+AT+COPS?
+
++COPS: 0,2,"72410",7
+
+OK
+AT+CNACT=0,1
+
+OK
+
++APP PDP: 0,ACTIVE
+AT+CNACT?
+
++CNACT: 0,1,"172.31.35.81"
++CNACT: 1,0,"0.0.0.0"
++CNACT: 2,0,"0.0.0.0"
++CNACT: 3,0,"0.0.0.0"
+
+OK
+
+
+
+Broker host: mqtt.dioty.co
+
+Broker port: 1883
+
+Secure Broker port: 8883. Please download the ca_cert file from GitHub
+
+WebSockets port: 8080
+
+Secure WebSockets port: 8880
+
+User id: ferdinando.crispino@gmail.com
+
+Your root topic: "/ferdinando.crispino@gmail.com/"
+
+Password:
+
+Sorry, we are currently not accepting new subscribers to the service.
+For existing users, your password was send to you via emai.
