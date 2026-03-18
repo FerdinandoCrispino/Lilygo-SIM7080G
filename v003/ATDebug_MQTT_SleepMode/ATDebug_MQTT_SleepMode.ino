@@ -106,7 +106,7 @@ struct Config {
   String NBiot_topic = "sensor_03";            // topico para envio de dados na plataforma MQTT - IOT
   const char* nomeArq = "/dados.csv";          // nome do arquivo de dados temporario para caso de falha de comunicaçao com o MQTT
   const char* nomeArqAllData = "/AllData.csv"; // nome do arquivo de dados permanente (todas as medições)
-  int num_sensor = 1;                          // numero de sensores existentes (1 a 4) 
+  int num_sensor = 1;                          // numero de sensores conectados no ADC (1 a 4) 
   bool GPS_active = true;                      // ativa ou desativa a leitura do GPS ao iniciar 
 };
 struct Config cfg;
@@ -285,7 +285,7 @@ bool isConnect()
 {
     modem.sendAT("+SMSTATE?");
     if (modem.waitResponse("+SMSTATE: ")) {
-        String res =  modem.stream.readStringUntil('\r');
+        String res =  modem.stream.readStringUntil('\n');
         // se retornar erro pode ser problema na comunicação e não que o sistema está desconectado
         if (res == "ERROR"){
           return false;
@@ -320,25 +320,24 @@ bool sendpayload(const estruturaDadosEnsaio& data2send)
     String pubStr =  "+SMPUB=\"" + cfg.NBiot_topic + "\"," + String(payload.length()) + ",1,1";
     Serial.println(pubStr);       
     //delay(10);
-    Serial.println(payload);
+    //Serial.println("payload text:");
+    //Serial.println(payload);
     
     modem.sendAT(pubStr);   
     if (modem.waitResponse(">") == 1) {
-        modem.stream.write(payload.c_str(), payload.length());
-        //Serial.print("\nTry publish payload: ");
-        //Serial.println(payload);
-
-        if (modem.waitResponse(3000)) {
-            String strresPayload =  modem.stream.readStringUntil('\r');
-            Serial.println(strresPayload);
-            if (strresPayload.indexOf("ERROR") != -1){            
-                Serial.println("Send Packet success!");
-                return true;
-            }  
+        modem.stream.write(payload.c_str(), payload.length());        
+        int res = modem.waitResponse(3000L, "OK");  
+        if (res == 1) {
+            Serial.println("\nSend Packet success! (OK)");
+            return true;
+        } else if (res == 2) {
+            Serial.println("\nSend Packet failed!(ERROR)");
+            return false;
         } else {
-            Serial.println("Send Packet failed!");
+            Serial.println("\nSem resposta do modem. (Timeout)");
+            return false;
         }
-    }
+    }    
     return false;
 }
 
@@ -1147,10 +1146,13 @@ void loop()
         
         //if (isConnect()) {
         readArq2send(cfg.nomeArq);
+        
         Serial.println("Enviando dados...");
         if (!sendpayload(result)) { 
           Serial.println("Salvando dados - Falha de envio!");
-          saveArq(cfg.nomeArq, result);            
+          saveArq(cfg.nomeArq, result); 
+          Serial.println("################ Dados do arquivo Temporario: ######################"); 
+          leArquivo(FFat, cfg.nomeArq);           
         }
         //}
           
