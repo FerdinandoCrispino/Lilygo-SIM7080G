@@ -99,7 +99,7 @@ struct Config {
   
   String NBiot_URL = "crystalmq.bevywise.com";      //ferdinando.crispino@gmail.com - #Mqqt#01
   String NBiot_port = "1883";
-  //String NBiot_username = "teste_não_ira_conectar";  
+//  String NBiot_username = "teste_não_ira_conectar";  
   String NBiot_username = "EeObn5ov3lmm7b1zZo";
   String NBiot_password = "QJeEn6EawcJ8gSoQCF";
   String NBiot_client = "teste1";              // nome do cliente na plataforma MQTT - IOT
@@ -391,18 +391,20 @@ bool readArq2send(const char* filename) {
     float temp;          // -1.0
     int bat;
     int vbat;
-    char rssi[6];;
+    int rssi;
     float lat;
     float lon;
-    char idSensor[5];
+    char idSensor[6];
     estruturaDadosEnsaio data;  
     
     while (file.available()) {
       String line = file.readStringUntil('\n');
-      //Serial.println("Envinado dados do arquivo!");
-      //Serial.println(line);     
+      Serial.println("Envinado dados do arquivo!");
+      Serial.println(line);     
      
-      sscanf(line.c_str(), "%[^,],%f,%.1f,%d,%d,%[^,],%f,%f,%[^,]",datahora, &pres, &temp, &bat, &vbat, &rssi, &lat, &lon, &idSensor);
+      int n = sscanf(line.c_str(), "%24[^,],%f,%f,%d,%d,%d,%f,%f,%5[^,]",datahora, &pres, &temp, &bat, &vbat, &rssi, &lat, &lon, idSensor);
+      
+      //Serial.println(n);
       data.dt = String(datahora);
       data.press_M1[0] = String(pres);
       data.chip_temp = String(temp);
@@ -412,6 +414,7 @@ bool readArq2send(const char* filename) {
       data.lat = String(lat);  
       data.lon = String(lon); 
       data.idSensor = String(idSensor);     
+
       //Enviando dados
       if (!sendpayload(data)){
         flagApagarArquivo = false;
