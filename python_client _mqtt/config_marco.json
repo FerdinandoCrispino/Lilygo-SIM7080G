@@ -1,0 +1,8 @@
+{
+  "TOPICOS": ["csa2048/modem1/saudepressao", "csa2048/modem1/diagnostico"],
+  "USERNAME": "URCnsl7Oz40wta4zEo",
+  "PASSWORD": "WhI4doaY6CIaYXCJS1",
+  "CLIENT_ID": "A7672_Receive",
+  "BROKER": "crystalmq.bevywise.com",
+  "PORT": 1883
+}

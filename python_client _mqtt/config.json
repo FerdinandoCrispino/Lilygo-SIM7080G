@@ -1,0 +1,13 @@
+{
+  "TOPICOS": ["csa2048/modem1/saudepressao", "csa2048/modem1/diagnostico"],
+  "USERNAME": "URCnsl7Oz40wta4zEo",
+  "PASSWORD": "WhI4doaY6CIaYXCJS1",
+  "CLIENT_ID": "A7672_Receive",
+  "BROKER": "crystalmq.bevywise.com",
+  "PORT": 1883,
+  "SUB_QOS": 1,
+  "MAX_QUEUED_MESSAGES": 1000,
+  "MAX_INFLIGHT_MESSAGES": 100,
+  "RECONNECT_MIN_DELAY": 1,
+  "RECONNECT_MAX_DELAY": 60
+}

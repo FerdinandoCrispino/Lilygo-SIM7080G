@@ -1,0 +1,8 @@
+{
+  "TOPICOS": ["sensor_01", "sensor_03"],
+  "USERNAME": "EeObn5ov3lIC5xGbY2",
+  "PASSWORD": "xaPS1cbCxj1kKadb6c",
+  "CLIENT_ID": "client_receive_ferd",
+  "BROKER": "crystalmq.bevywise.com",
+  "PORT": 1883
+}
