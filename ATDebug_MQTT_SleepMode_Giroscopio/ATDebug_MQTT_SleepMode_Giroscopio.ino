@@ -114,14 +114,15 @@ RTC_DATA_ATTR int myvar = 0;                    // variavel no RTC para ser usad
 //
 #define WDT_TIMEOUT 300                   // Watchdog Tempo limite em segundos
 
-// Set to wake up every 4 minutes to send data to platform
+// Set to wake up every 4 minutes (240) to send data to platform
 #define uS_TO_S_FACTOR 1000000ULL        /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  240        //14400=4horas   21600=6horas    /* Time ESP32 will go to sleep (in seconds) */
+
+#define TIME_TO_SLEEP  3600        //14400=4horas   21600=6horas    /* Time ESP32 will go to sleep (in seconds) */
 
 struct Config {
-  int tempoAmostra = 10000;                     // tempo de espera apos acordar para fazer a leitura (millisegundos)
+  int tempoAmostra = 5000;                     // tempo de espera apos acordar para fazer a leitura (millisegundos)
   int numLeituras = 100;                        // numero de amostras para uma leitura 
-  String idSensor = "NV003";
+  String idSensor = "NV007";
   String codProj = "Proj. teste";
   String SIMconf = "kiteiot.vivo.com.br";
   // servidor MQTT
@@ -136,12 +137,14 @@ struct Config {
   String NBiot_username = "EeObn5ov3lmm7b1zZo";
   String NBiot_password = "QJeEn6EawcJ8gSoQCF";
   String NBiot_client = "teste1";                // nome do cliente na plataforma MQTT - IOT
-  String NBiot_topic = "sensor_03";              // topico para envio de dados na plataforma MQTT - IOT
+  String NBiot_topic = "DT007";              // topico para envio de dados na plataforma MQTT - IOT
   const char* nomeArq = "/dados.csv";            // nome do arquivo de dados temporario para caso de falha de comunicaçao com o MQTT
   const char* nomeArqAllData = "/AllData.csv";   // nome do arquivo de dados permanente (todas as medições)
   int num_sensor = 1;                            // numero de sensores conectados no ADC (1 a 4) 
   int num_sensorGiro = 2;                       // numero de sensores de deslocamento I2C
   bool GPS_active = false;                       // ativa ou desativa a leitura do GPS ao iniciar 
+  bool Sensor_Dist = false;                     // ativa ou desativa a leitura do sensor de distancia
+  bool Sensor_Pres = false;                     // ativa ou desativa a leitura do sensor de 4 a 20 ma 
 };
 struct Config cfg;
 
@@ -169,6 +172,7 @@ struct estruturaDadosEnsaio result;
 
 // ======================== MPU6050 - Giroscopio e Acelerometro ==============================
 // ================= CONFIG =================
+
 #define NUM_IMUS 2
 uint8_t imuAddresses[NUM_IMUS] = {0x68, 0x69};
 //#define NUM_IMUS 1
@@ -180,12 +184,12 @@ uint8_t imuAddresses[NUM_IMUS] = {0x68, 0x69};
 IMUUnit imus[NUM_IMUS];
 
 // ================= INIT =================
-void initIMU(IMUUnit &imu, uint8_t address, TwoWire *bus_i2c ) {
+bool initIMU(IMUUnit &imu, uint8_t address, TwoWire *bus_i2c ) {
     
     if (!imu.mpu.begin(address, bus_i2c)) {
         Serial.print("Erro MPU no endereco: ");
         Serial.println(address, HEX);
-        while (1);
+        return false;
     }
 
     imu.mpu.setAccelerometerRange(MPU6050_RANGE_2_G);
@@ -200,6 +204,7 @@ void initIMU(IMUUnit &imu, uint8_t address, TwoWire *bus_i2c ) {
 
     imu.lastTime = millis();
     imu.initialized = true;
+    return true;
 }
 
 // ================= CALIB =================
@@ -1068,14 +1073,17 @@ void setup()
     // ================== setup Acelerometro e Giroscopio ============================== 
     for (int i = 0; i < NUM_IMUS; i++) {
       
-        initIMU(imus[i], imuAddresses[i], &I2C_BUS);
+        bool ok_IMU = initIMU(imus[i], imuAddresses[i], &I2C_BUS);
         
-        bool ok = loadCalibration(imus[i], i);
-        if (!ok) {
-            Serial.printf("IMU %d sem calibração. Iniciando...\n", i);
-            delay(3000); // tempo para estabilizar
-            calibrateAndSave(imus[i], i);
-        }
+        if (ok_IMU){          
+          bool ok = loadCalibration(imus[i], i);
+          
+          if (!ok) {
+              Serial.printf("IMU %d sem calibração. Iniciando...\n", i);
+              delay(3000); // tempo para estabilizar
+              calibrateAndSave(imus[i], i);
+          }         
+        }         
     }
     
     pinMode(pinNotGo2sleep, INPUT_PULLDOWN);           // pino de controle - impede de ir para o sleep mode     
@@ -1115,7 +1123,51 @@ float calculate_std_dev(int16_t data[], float mean, int num_values) {
     return sqrt(variance);
 }
 
+void get_info(){
 
+  // ----------------------------------------------------------
+    // Timestamp 
+    //String dt;  
+    //modem.sendAT("+CCLK?");
+    //modem.waitResponse(2000UL,dt);
+    //dt = modem.stream.readString();
+    //printf("Data: %s \n", dt);    
+    //result.dt = dt.substring(10,30);
+    //result.dt = dt.substring(10,18);
+    //result.hora = dt.substring(19,27);
+
+    esp_set_time();
+    result.dt = esp_get_time();
+    /*
+    if (result.dt.substring(0, 4).toInt() < 2000) {     // ano < 2000
+      Serial.printf("esp_get_time fail! Retrail. %s \n",result.dt.substring(0, 4) );
+      esp_set_time();
+      result.dt = esp_get_time();      
+    }
+    */
+  // ----------------------------------------------------------
+    // Battery information
+    int bat_percent = PMU.getBatteryPercent();
+    int bat_voltage = PMU.getBattVoltage();
+    result.per_bateria = String(bat_percent);
+    result.vol_bateria = String(bat_voltage);
+    Serial.printf("Porcentagem da bateria: %.d %%\n", bat_percent);
+    Serial.printf("Tensão da bateria: %.d % mV\n", bat_voltage);
+    //modem.sendAT("+CBC");
+    //modem.waitResponse();
+
+    /*
+    // modem sinal -----------------------------------------------
+    modem.sendAT("+CSQ"); 
+    modem.waitResponse(10000UL,"+CSQ: ");
+    String modem_rssi = modem.stream.readStringUntil('\n');
+    modem_rssi.trim();
+    if (modem_rssi != "") {
+      result.chip_RSSI = modem_rssi;
+    }
+    //Serial.print("Potencia do sinal:");  Serial.println(result.chip_RSSI);
+    */
+}
 void readSensor()
 {   
     // Ligar a fonte de tensão do lilyGO
@@ -1136,27 +1188,7 @@ void readSensor()
     Serial.print("getBattVoltage:"); Serial.print(PMU.getBattVoltage()); Serial.println("mV");
     Serial.print("getVbusVoltage:"); Serial.print(PMU.getVbusVoltage()); Serial.println("mV");
     Serial.print("getSystemVoltage:"); Serial.print(PMU.getSystemVoltage()); Serial.println("mV");
-    
-    // ----------------------------------------------------------
-    // Timestamp 
-    //String dt;  
-    //modem.sendAT("+CCLK?");
-    //modem.waitResponse(2000UL,dt);
-    //dt = modem.stream.readString();
-    //printf("Data: %s \n", dt);    
-    //result.dt = dt.substring(10,30);
-    //result.dt = dt.substring(10,18);
-    //result.hora = dt.substring(19,27);
-
-    esp_set_time();
-    result.dt = esp_get_time();
-    /*
-    if (result.dt.substring(0, 4).toInt() < 2000) {     // ano < 2000
-      Serial.printf("esp_get_time fail! Retrail. %s \n",result.dt.substring(0, 4) );
-      esp_set_time();
-      result.dt = esp_get_time();      
-    }
-    */
+        
     
     if (cfg.num_sensor > 4) {
        cfg.num_sensor = 1;
@@ -1195,39 +1227,8 @@ void readSensor()
     // DesLigar a fonte de tensão do LilyGO que alimenta o step up 
     digitalWrite(LigaVcc_PIN, LOW);
     
-    // ----------------------------------------------------------
-    // leitura do sensor de temeratura interna
-    ESP_ERROR_CHECK(temperature_sensor_enable(temp_sensor));    
-    float temperature = 0;
-    ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &temperature));
-    result.chip_temp = String(temperature);
-    Serial.printf("Internal Temperature: %.2f °C\n", temperature);
-    ESP_ERROR_CHECK(temperature_sensor_disable(temp_sensor));
-
-
-    // ----------------------------------------------------------
-    // Battery information
-    int bat_percent = PMU.getBatteryPercent();
-    int bat_voltage = PMU.getBattVoltage();
-    result.per_bateria = String(bat_percent);
-    result.vol_bateria = String(bat_voltage);
-    Serial.printf("Porcentagem da bateria: %.d %%\n", bat_percent);
-    Serial.printf("Tensão da bateria: %.d % mV\n", bat_voltage);
-    //modem.sendAT("+CBC");
-    //modem.waitResponse();
-
-    /*
-    // modem sinal -----------------------------------------------
-    modem.sendAT("+CSQ"); 
-    modem.waitResponse(10000UL,"+CSQ: ");
-    String modem_rssi = modem.stream.readStringUntil('\n');
-    modem_rssi.trim();
-    if (modem_rssi != "") {
-      result.chip_RSSI = modem_rssi;
-    }
-    //Serial.print("Potencia do sinal:");  Serial.println(result.chip_RSSI);
-    */
 }  
+
 
 void getWakeupReason()
 {
@@ -1400,12 +1401,29 @@ void loop()
         listarArquivosFFat();
 
         // =========================== Leitura do sensor de distancia ========================
-        //Serial.println("Leitura do sensor de distancia...");    
-        //result.distancia = read_sensor_dist();
-        //Serial.println(result.distancia);  
+        if (cfg.Sensor_Dist){
+          Serial.println("Leitura do sensor de distancia...");    
+          result.distancia = read_sensor_dist();
+          Serial.println(result.distancia);  
+        }
+        
+        // ===========================Leitura da data e do estado da bateria =================
+        get_info();
 
+        // ----------------------------------------------------------
+        
+        // ==========================leitura do sensor de temeratura interna =================        
+        ESP_ERROR_CHECK(temperature_sensor_enable(temp_sensor));    
+        float temperature = 0;
+        ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &temperature));
+        result.chip_temp = String(temperature);
+        Serial.printf("Internal Temperature: %.2f °C\n", temperature);
+        ESP_ERROR_CHECK(temperature_sensor_disable(temp_sensor));
+    
         // =========================== Leitura do sensor de pressão ==========================                                      
-        //readSensor(); 
+        if (cfg.Sensor_Pres){
+          readSensor();   
+        }        
         
         // =========================== leitura do Giroscopio =================================
         Serial.println("Inicia leitura do Giroscopio...");
